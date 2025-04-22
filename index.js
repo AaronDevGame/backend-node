@@ -8,7 +8,7 @@ app.use(express.json());
 app.use((req, res, next) => {
 
   const apiKey = req.headers['x-api-key'];
-  
+
   if (apiKey !== process.env.API_KEY) {
     return res.status(403).json({
       code: 403,
@@ -40,6 +40,24 @@ app.post('/hello', (req, res) => {
   res.json({
     code: 200,
     msg: `Hello, ${name}`
+  });
+});
+
+// 🔁 POST route to toggle API status
+app.post('/toggle-api', (req, res) => {
+  const { enabled } = req.body;
+
+  if (typeof enabled !== 'boolean') {
+    return res.status(400).json({
+      code: 400,
+      msg: "Missing or invalid 'enabled' boolean in request body"
+    });
+  }
+
+  apiEnabled = enabled;
+  res.json({
+    code: 200,
+    msg: `API is now ${apiEnabled ? 'enabled' : 'disabled'}`
   });
 });
 
