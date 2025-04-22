@@ -1,66 +1,68 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const PORT = 3000;
 
 app.use(express.json());
 
-// Middleware to check x-api-key header
+// Path to toggle state file
+const toggleFilePath = path.join(__dirname, 'toggle.json');
+
+// Helper to read toggle state
+const isApiEnabled = () => {
+  try {
+    const data = fs.readFileSync(toggleFilePath);
+    const json = JSON.parse(data);
+    return json.enabled;
+  } catch (err) {
+    return true; // Default to true if file read fails
+  }
+};
+
+// Middleware: API key check
 app.use((req, res, next) => {
-
   const apiKey = req.headers['x-api-key'];
-
   if (apiKey !== process.env.API_KEY) {
-    return res.status(403).json({
-      code: 403,
-      msg: 'Forbidden: Invalid API Key'
-    });
+    return res.status(403).json({ code: 403, msg: 'Forbidden: Invalid API Key' });
   }
   next();
 });
 
-// GET route
-app.get('/status', (req, res) => {
-  res.json({
-    code: 200,
-    msg: "success"
-  });
+// Middleware: API enabled check
+app.use((req, res, next) => {
+  if (req.path === '/toggle-api') return next(); // skip toggle check for toggle-api endpoint
+
+  if (!isApiEnabled()) {
+    return res.status(503).json({ code: 503, msg: 'Service temporarily disabled' });
+  }
+
+  next();
 });
 
-// POST route
+// GET status
+app.get('/status', (req, res) => {
+  res.json({ code: 200, msg: "success" });
+});
+
+// POST hello
 app.post('/hello', (req, res) => {
   const { name } = req.body;
+  if (!name) return res.status(400).json({ code: 400, msg: "Missing 'name' in request body" });
 
-  if (!name) {
-    return res.status(400).json({
-      code: 400,
-      msg: "Missing 'name' in request body"
-    });
-  }
-
-  res.json({
-    code: 200,
-    msg: `Hello, ${name}`
-  });
+  res.json({ code: 200, msg: `Hello, ${name}` });
 });
 
-// 🔁 POST route to toggle API status
+// POST toggle
 app.post('/toggle-api', (req, res) => {
   const { enabled } = req.body;
-
   if (typeof enabled !== 'boolean') {
-    return res.status(400).json({
-      code: 400,
-      msg: "Missing or invalid 'enabled' boolean in request body"
-    });
+    return res.status(400).json({ code: 400, msg: "Missing or invalid 'enabled' boolean in request body" });
   }
 
-  apiEnabled = enabled;
-  res.json({
-    code: 200,
-    msg: `API is now ${apiEnabled ? 'enabled' : 'disabled'}`
-  });
+  fs.writeFileSync(toggleFilePath, JSON.stringify({ enabled }, null, 2));
+  res.json({ code: 200, msg: `API is now ${enabled ? 'enabled' : 'disabled'}` });
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
