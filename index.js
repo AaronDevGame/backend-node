@@ -40,9 +40,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// // GET status
+// app.get('/status', (req, res) => {
+//   res.json({ code: 200, msg: "success" });
+// });
+
 // GET status
 app.get('/status', (req, res) => {
-  res.json({ code: 200, msg: "success" });
+  const timeSinceLastActive = Date.now() - lastActive;
+  const seconds = Math.floor(timeSinceLastActive / 1000);
+  res.json({
+    code: 200,
+    msg: "success",
+    timeSinceLastActive: `${seconds} seconds ago` // Respond with how long since the last activity
+  });
 });
 
 // POST hello
