@@ -46,14 +46,25 @@ app.use((req, res, next) => {
 // });
 
 // GET status
+let lastActive = Date.now();
 app.get('/status', (req, res) => {
-  const timeSinceLastActive = Date.now() - lastActive;
-  const seconds = Math.floor(timeSinceLastActive / 1000);
-  res.json({
-    code: 200,
-    msg: "success",
-    timeSinceLastActive: `${seconds} seconds ago` // Respond with how long since the last activity
-  });
+  try {
+    // If lastActive is not defined, set it to the current time
+    if (!lastActive) {
+      lastActive = Date.now();
+    }
+
+    const timeSinceLastActive = Date.now() - lastActive;
+    const seconds = Math.floor(timeSinceLastActive / 1000);
+    res.json({
+      code: 200,
+      msg: "success",
+      timeSinceLastActive: `${seconds} seconds ago` // Respond with how long since the last activity
+    });
+  } catch (error) {
+    console.error('Error in /status endpoint:', error);
+    res.status(500).json({ code: 500, msg: 'Internal Server Error' });
+  }
 });
 
 // POST hello
