@@ -49,13 +49,13 @@ app.use((req, res, next) => {
 let lastActive = Date.now();
 app.get('/status', (req, res) => {
   try {
-    // If lastActive is not defined, set it to the current time
-    if (!lastActive) {
-      lastActive = Date.now();
-    }
-
+    // Calculate the time since last access
     const timeSinceLastActive = Date.now() - lastActive;
     const seconds = Math.floor(timeSinceLastActive / 1000);
+
+    // Update lastActive after responding
+    lastActive = Date.now();
+    
     res.json({
       code: 200,
       msg: "success",
